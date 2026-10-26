@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>TBR의 TBR</title>
+<style>
+:root{color-scheme:light;--text:#222;--muted:#777;--line:#e8e8e8;--soft:#f7f7f7;--accent:#333}
+*{box-sizing:border-box}
+html,body{margin:0;background:#fff;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+body{padding:0 16px 28px}
+main{max-width:760px;margin:0 auto}
+header{padding:25px 0 17px;border-bottom:1px solid var(--line)}
+h1{font-size:22px;letter-spacing:-.7px;margin:0;font-weight:750}
+.summary{display:flex;gap:18px;flex-wrap:wrap;padding:15px 0;border-bottom:1px solid var(--line)}
+.metric{display:flex;gap:6px;align-items:baseline}
+.metric .label{color:var(--muted);font-size:12px}
+.metric .value{font-weight:700;font-variant-numeric:tabular-nums}
+.table-wrap{width:100%;overflow-x:auto}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th,td{padding:11px 5px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11px;color:var(--muted);font-weight:600;text-align:left}
+th:first-child,td:first-child{padding-left:0;width:auto}
+th:nth-child(2),td:nth-child(2){width:88px}
+th:nth-child(3),td:nth-child(3){width:76px}
+th:nth-child(4),td:nth-child(4){width:76px;text-align:right;padding-right:0}
+th.num,td.num{text-align:right}
+td input{font:inherit;border:1px solid transparent;background:transparent;color:var(--text);border-radius:5px;padding:6px 4px;width:100%;min-width:0;outline:none}
+td input:hover{border-color:#ddd}
+td input:focus{border-color:#999;background:#fff}
+td.title input{padding-left:0;font-weight:500}
+td.num input{text-align:right;font-variant-numeric:tabular-nums}
+td.time{font-size:12px;color:#666;white-space:nowrap}
+tfoot td{font-weight:750;background:#fafafa}
+tfoot td:first-child{font-size:13px}
+tfoot td.time{color:var(--text)}
+.actions{display:flex;gap:8px;padding:15px 0}
+button{font:inherit;border:1px solid #ddd;border-radius:7px;background:#fff;color:#222;padding:9px 13px;cursor:pointer}
+button:active{background:#f3f3f3}
+#addBtn{flex:1}
+.del{border:0;color:#999;padding:4px 6px;font-size:18px;line-height:1}
+td:last-child,th:last-child{width:28px;text-align:right;padding-right:0}
+@media(max-width:480px){
+ body{padding:0 12px 24px}
+ header{padding:20px 0 14px}
+ h1{font-size:20px}
+ .summary{gap:8px 14px;padding:12px 0}
+ .metric{gap:4px}
+ .metric .label{font-size:11px}
+ .metric .value{font-size:13px}
+ th,td{padding-top:9px;padding-bottom:9px}
+ th:nth-child(2),td:nth-child(2){width:72px}
+ th:nth-child(3),td:nth-child(3){width:57px}
+ th:nth-child(4),td:nth-child(4){width:62px}
+ td input{padding:6px 2px;font-size:13px}
+ td.title input{font-size:13px}
+ td.time{font-size:11px}
+}
+</style>
+</head>
+<body>
+<main>
+<header><h1>TBR의 TBR</h1></header>
+<section class="summary" aria-label="합계">
+  <div class="metric"><span class="label">작품</span><span class="value" id="worksTotal">0</span></div>
+  <div class="metric"><span class="label">Words</span><span class="value" id="wordsTotal">0</span></div>
+  <div class="metric"><span class="label">Chapters</span><span class="value" id="chaptersTotal">0</span></div>
+  <div class="metric"><span class="label">시간</span><span class="value" id="hoursTotal">0</span></div>
+</section>
+<div class="table-wrap">
+<table>
+<thead><tr><th>작품명</th><th class="num">Words</th><th class="num">Chapters</th><th class="num">시간</th><th></th></tr></thead>
+<tbody id="rows"></tbody>
+<tfoot><tr><td>합계</td><td class="num" id="totalWords">0</td><td class="num" id="totalChapters">0</td><td class="time" id="totalTime">0h</td><td></td></tr></tfoot>
+</table>
+</div>
+<div class="actions"><button id="addBtn">＋ 작품 추가</button></div>
+</main>
+<script>
+(()=>{
+const KEY='tbr-of-tbr-simple-v1', RATE=7333;
+const initial=[
+{title:'Teenage Wasteland',words:51212,chapters:9},
+{title:'Nice Things',words:22052,chapters:1},
+{title:'The Cat Is In The Bag',words:49039,chapters:17},
+{title:'Every Me and Every You',words:69300,chapters:6},
+{title:'Beneath the Wave',words:30003,chapters:1},
+{title:'Against All Odds',words:53815,chapters:2},
+{title:'Leeward',words:8185,chapters:1},
+{title:"Your Secret's Out",words:55305,chapters:9}
+];
+const $=id=>document.getElementById(id);
+const id=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+const int=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.floor(n):0};
+let data;
+try{const s=localStorage.getItem(KEY);data=s===null?initial.map(x=>({...x,id:id()})):JSON.parse(s);if(!Array.isArray(data))throw Error();}
+catch(e){data=initial.map(x=>({...x,id:id()}));}
+data=data.map(x=>({id:x.id||id(),title:String(x.title??''),words:int(x.words),chapters:int(x.chapters)}));
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const time=w=>{const m=Math.round(w/RATE*60),h=Math.floor(m/60),r=m%60;return h?(r?`${h}h ${r}m`:`${h}h`):`${r}m`;};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+function render(){
+$('rows').innerHTML=data.map(x=>`<tr data-id="${esc(x.id)}">
+<td class="title"><input aria-label="작품명" data-field="title" type="text" value="${esc(x.title)}" placeholder="작품명"></td>
+<td class="num"><input aria-label="Words" data-field="words" type="number" min="0" step="1" inputmode="numeric" value="${x.words||''}" placeholder="0"></td>
+<td class="num"><input aria-label="Chapters" data-field="chapters" type="number" min="0" step="1" inputmode="numeric" value="${x.chapters||''}" placeholder="0"></td>
+<td class="time">${time(x.words)}</td><td><button class="del" data-delete aria-label="삭제">×</button></td></tr>`).join('');
+const w=data.reduce((s,x)=>s+x.words,0),c=data.reduce((s,x)=>s+x.chapters,0);
+$('worksTotal').textContent=fmt(data.length);$('wordsTotal').textContent=fmt(w);$('chaptersTotal').textContent=fmt(c);$('hoursTotal').textContent=time(w);
+$('totalWords').textContent=fmt(w);$('totalChapters').textContent=fmt(c);$('totalTime').textContent=time(w);
+}
+$('rows').addEventListener('change',e=>{
+const el=e.target.closest('[data-field]');if(!el)return;
+const item=data.find(x=>x.id===el.closest('tr').dataset.id);if(!item)return;
+item[el.dataset.field]=el.dataset.field==='title'?el.value:int(el.value);save();render();
+});
+$('rows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();e.target.blur();}});
+$('rows').addEventListener('click',e=>{
+const b=e.target.closest('[data-delete]');if(!b)return;
+data=data.filter(x=>x.id!==b.closest('tr').dataset.id);save();render();
+});
+$('addBtn').addEventListener('click',()=>{
+data.push({id:id(),title:'',words:0,chapters:0});save();render();
+const fields=$('rows').querySelectorAll('tr:last-child input');if(fields.length)fields[0].focus();
+window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+});
+render();
+})();
+</script>
+</body>
+</html>
