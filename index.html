@@ -6,7 +6,8 @@
 <meta name="theme-color" content="#ffffff">
 <title>TBR의 TBR</title>
 <style>
-:root{color-scheme:light;--text:#222;--muted:#777;--line:#e8e8e8;--soft:#f7f7f7;--accent:#333}
+:root{color-scheme:light;--text:#222;--muted:#777;--line:#e8e8e8;--soft:#f7f7f7;--accent:#333;--read:#89f436;--pw:190px;
+ --cols:24px minmax(0,1fr) 88px 76px 76px 28px}
 *{box-sizing:border-box}
 html,body{margin:0;background:#fff;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
 body{padding:0 16px 28px}
@@ -17,31 +18,52 @@ h1{font-size:22px;letter-spacing:-.7px;margin:0;font-weight:750}
 .metric{display:flex;gap:6px;align-items:baseline}
 .metric .label{color:var(--muted);font-size:12px}
 .metric .value{font-weight:700;font-variant-numeric:tabular-nums}
-.table-wrap{width:100%;overflow-x:auto}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
-th,td{padding:11px 5px;border-bottom:1px solid var(--line);vertical-align:middle}
-th{font-size:11px;color:var(--muted);font-weight:600;text-align:left}
-th:first-child,td:first-child{padding-left:0;width:auto}
-th:nth-child(2),td:nth-child(2){width:88px}
-th:nth-child(3),td:nth-child(3){width:76px}
-th:nth-child(4),td:nth-child(4){width:76px;text-align:right;padding-right:0}
-th.num,td.num{text-align:right}
-td input{font:inherit;border:1px solid transparent;background:transparent;color:var(--text);border-radius:5px;padding:6px 4px;width:100%;min-width:0;outline:none}
-td input:hover{border-color:#ddd}
-td input:focus{border-color:#999;background:#fff}
-td.title input{padding-left:0;font-weight:500}
-td.num input{text-align:right;font-variant-numeric:tabular-nums}
-td.time{font-size:12px;color:#666;white-space:nowrap}
-tfoot td{font-weight:750;background:#fafafa}
-tfoot td:first-child{font-size:13px}
-tfoot td.time{color:var(--text)}
+
+/* 그리드 기반 행 (표 모양 유지) */
+.grid{display:grid;grid-template-columns:var(--cols);align-items:center;column-gap:0}
+.grid>*{padding:0 5px;min-width:0}
+.grid>*:first-child{padding:0;text-align:center}
+.grid>*:last-child{padding-right:0;text-align:right}
+.head{border-bottom:1px solid var(--line);padding:11px 0}
+.head span{font-size:11px;color:var(--muted);font-weight:600}
+.head .num{text-align:right}
+.rw{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.row{background:#fff;padding:11px 0;position:relative;z-index:1;transition:transform .22s ease;touch-action:pan-y}
+.rw.open .row{transform:translateX(calc(-1*var(--pw)))}
+.row.swiping{transition:none}
+.row input{font:inherit;border:1px solid transparent;background:transparent;color:var(--text);border-radius:5px;padding:6px 4px;width:100%;min-width:0;outline:none}
+.row input:hover{border-color:#ddd}
+.row input:focus{border-color:#999;background:#fff}
+.row .title input{padding-left:0;font-weight:500}
+.row .num input{text-align:right;font-variant-numeric:tabular-nums}
+.row .num{text-align:right}
+.row .time{font-size:12px;color:#666;white-space:nowrap;text-align:right}
+.foot{background:#fafafa;font-weight:750;padding:11px 0;border-bottom:1px solid var(--line)}
+.foot .lbl{font-size:13px}
+.foot .num{text-align:right;font-variant-numeric:tabular-nums}
+.foot .time{text-align:right}
 .actions{display:flex;gap:8px;padding:15px 0}
 button{font:inherit;border:1px solid #ddd;border-radius:7px;background:#fff;color:#222;padding:9px 13px;cursor:pointer}
 button:active{background:#f3f3f3}
 #addBtn{flex:1}
 .del{border:0;color:#999;padding:4px 6px;font-size:18px;line-height:1}
-td:last-child,th:last-child{width:28px;text-align:right;padding-right:0}
+.handle{display:inline-block;color:#bbb;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:16px;line-height:1;padding:8px 4px;letter-spacing:-2px}
+.rw.dragging{background:#f3f3f3;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:3}
+.rw.dragging .row{background:transparent}
+.rw.dragging .handle{cursor:grabbing}
+
+/* 옆으로 밀면 나오는 메뉴 (카톡 스타일) */
+.panel{position:absolute;right:0;top:0;bottom:0;width:var(--pw);display:flex;align-items:center;justify-content:center;gap:8px;background:#f1f1f1;z-index:0}
+.panel .rbtn{width:42px;height:42px;border-radius:50%;border:0;padding:0;font-size:22px;line-height:1;color:#fff;display:flex;align-items:center;justify-content:center}
+.panel .minus{background:#6b7280}
+.panel .plus{background:#4cae12}
+.panel .mid{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:#555}
+.panel .mid .in{display:flex;align-items:center;gap:3px;font-size:13px;color:#222}
+.panel .mid input{width:40px;font:inherit;text-align:center;border:1px solid #cfcfcf;border-radius:6px;padding:4px 2px;background:#fff;outline:none}
+.panel .mid .pct{font-weight:700;font-variant-numeric:tabular-nums}
+
 @media(max-width:480px){
+ :root{--cols:20px minmax(0,1fr) 72px 57px 62px 28px;--pw:176px}
  body{padding:0 12px 24px}
  header{padding:20px 0 14px}
  h1{font-size:20px}
@@ -49,13 +71,11 @@ td:last-child,th:last-child{width:28px;text-align:right;padding-right:0}
  .metric{gap:4px}
  .metric .label{font-size:11px}
  .metric .value{font-size:13px}
- th,td{padding-top:9px;padding-bottom:9px}
- th:nth-child(2),td:nth-child(2){width:72px}
- th:nth-child(3),td:nth-child(3){width:57px}
- th:nth-child(4),td:nth-child(4){width:62px}
- td input{padding:6px 2px;font-size:13px}
- td.title input{font-size:13px}
- td.time{font-size:11px}
+ .head,.row,.foot{padding-top:9px;padding-bottom:9px}
+ .row input{padding:6px 2px;font-size:13px}
+ .row .title input{font-size:13px}
+ .row .time{font-size:11px}
+ .panel .rbtn{width:38px;height:38px}
 }
 </style>
 </head>
@@ -68,20 +88,16 @@ td:last-child,th:last-child{width:28px;text-align:right;padding-right:0}
   <div class="metric"><span class="label">Chapters</span><span class="value" id="chaptersTotal">0</span></div>
   <div class="metric"><span class="label">시간</span><span class="value" id="hoursTotal">0</span></div>
 </section>
-<div class="table-wrap">
-<table>
-<thead><tr><th>작품명</th><th class="num">Words</th><th class="num">Chapters</th><th class="num">시간</th><th></th></tr></thead>
-<tbody id="rows"></tbody>
-<tfoot><tr><td>합계</td><td class="num" id="totalWords">0</td><td class="num" id="totalChapters">0</td><td class="time" id="totalTime">0h</td><td></td></tr></tfoot>
-</table>
-</div>
+<div class="grid head"><span></span><span>작품명</span><span class="num">Words</span><span class="num">Chapters</span><span class="num">시간</span><span></span></div>
+<div id="rows"></div>
+<div class="grid foot"><span></span><span class="lbl">합계</span><span class="num" id="totalWords">0</span><span class="num" id="totalChapters">0</span><span class="time" id="totalTime">0h</span><span></span></div>
 <div class="actions"><button id="addBtn">＋ 작품 추가</button></div>
 </main>
 <script>
 (()=>{
-const KEY='tbr-of-tbr-simple-v1', RATE=7333;
+const KEY='tbr-of-tbr-simple-v1', RATE=7333, READ_COLOR='#89f436';
 const initial=[
-{title:'Teenage Wasteland',words:51212,chapters:9},
+{title:'Teenage Wasteland',words:51212,chapters:9,read:0},
 {title:'Nice Things',words:22052,chapters:1},
 {title:'The Cat Is In The Bag',words:49039,chapters:17},
 {title:'Every Me and Every You',words:69300,chapters:6},
@@ -92,39 +108,165 @@ const initial=[
 ];
 const $=id=>document.getElementById(id);
 const id=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
-const int=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.floor(n):0};
+const int=v=>{const n=Number(String(v).replace(/,/g,''));return Number.isFinite(n)&&n>0?Math.floor(n):0};
 let data;
 try{const s=localStorage.getItem(KEY);data=s===null?initial.map(x=>({...x,id:id()})):JSON.parse(s);if(!Array.isArray(data))throw Error();}
 catch(e){data=initial.map(x=>({...x,id:id()}));}
-data=data.map(x=>({id:x.id||id(),title:String(x.title??''),words:int(x.words),chapters:int(x.chapters)}));
+data=data.map(x=>({id:x.id||id(),title:String(x.title??''),words:int(x.words),chapters:int(x.chapters),read:int(x.read)}));
+data.forEach(x=>{if(x.read>x.chapters)x.read=x.chapters;});
 const fmt=n=>Math.round(n).toLocaleString('en-US');
 const time=w=>{const m=Math.round(w/RATE*60),h=Math.floor(m/60),r=m%60;return h?(r?`${h}h ${r}m`:`${h}h`):`${r}m`;};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+const pctOf=x=>x.chapters>0?Math.min(100,Math.round(x.read/x.chapters*100)):0;
+// 읽은 만큼만 초록으로 칠하고 나머지는 흰색
+const fillBg=p=>p>0?`linear-gradient(to right,${READ_COLOR} ${p}%,#fff ${p}%)`:'#fff';
+let open=false;
+
 function render(){
-$('rows').innerHTML=data.map(x=>`<tr data-id="${esc(x.id)}">
-<td class="title"><input aria-label="작품명" data-field="title" type="text" value="${esc(x.title)}" placeholder="작품명"></td>
-<td class="num"><input aria-label="Words" data-field="words" type="number" min="0" step="1" inputmode="numeric" value="${x.words||''}" placeholder="0"></td>
-<td class="num"><input aria-label="Chapters" data-field="chapters" type="number" min="0" step="1" inputmode="numeric" value="${x.chapters||''}" placeholder="0"></td>
-<td class="time">${time(x.words)}</td><td><button class="del" data-delete aria-label="삭제">×</button></td></tr>`).join('');
+$('rows').innerHTML=data.map((x,i)=>{
+ const p=pctOf(x);
+ const panel=i===0?`<div class="panel">
+  <button class="rbtn minus" data-step="-1" aria-label="챕터 -1">−</button>
+  <div class="mid"><span>읽는 챕터</span>
+   <span class="in"><input type="text" inputmode="numeric" data-readin value="${x.read}" aria-label="읽는 챕터"> / ${x.chapters}</span>
+   <span class="pct">${p}%</span></div>
+  <button class="rbtn plus" data-step="1" aria-label="챕터 +1">＋</button></div>`:'';
+ return `<div class="rw${i===0&&open?' open':''}" data-id="${esc(x.id)}">${panel}
+<div class="grid row"${i===0?` style="background:${fillBg(p)}"`:''}>
+<span><span class="handle" data-handle title="드래그해서 순서 변경">⋮⋮</span></span>
+<span class="title"><input aria-label="작품명" data-field="title" type="text" value="${esc(x.title)}" placeholder="작품명"></span>
+<span class="num"><input aria-label="Words" data-field="words" type="text" inputmode="numeric" autocomplete="off" value="${x.words?fmt(x.words):''}" placeholder="0"></span>
+<span class="num"><input aria-label="Chapters" data-field="chapters" type="number" min="0" step="1" inputmode="numeric" value="${x.chapters||''}" placeholder="0"></span>
+<span class="time">${time(x.words)}</span>
+<span><button class="del" data-delete aria-label="삭제">×</button></span></div></div>`;
+}).join('');
 const w=data.reduce((s,x)=>s+x.words,0),c=data.reduce((s,x)=>s+x.chapters,0);
 $('worksTotal').textContent=fmt(data.length);$('wordsTotal').textContent=fmt(w);$('chaptersTotal').textContent=fmt(c);$('hoursTotal').textContent=time(w);
 $('totalWords').textContent=fmt(w);$('totalChapters').textContent=fmt(c);$('totalTime').textContent=time(w);
 }
+
+function setRead(rw,v){
+ const item=data.find(x=>x.id===rw.dataset.id);if(!item)return;
+ v=Math.max(0,Math.min(item.chapters,v));
+ item.read=v;save();
+ const p=pctOf(item);
+ rw.querySelector('.row').style.background=fillBg(p);
+ rw.querySelector('.pct').textContent=p+'%';
+ return v;
+}
+
+$('rows').addEventListener('input',e=>{
+ const el=e.target;
+ if(el.dataset.field==='words'){
+  const pos=el.selectionStart??el.value.length;
+  const digitsBefore=el.value.slice(0,pos).replace(/\D/g,'').length;
+  const digits=el.value.replace(/\D/g,'');
+  const f=digits?Number(digits).toLocaleString('en-US'):'';
+  el.value=f;
+  let n=0,np=f.length;
+  if(digitsBefore===0)np=0;
+  else for(let i=0;i<f.length;i++){if(/\d/.test(f[i]))n++;if(n===digitsBefore){np=i+1;break;}}
+  try{el.setSelectionRange(np,np);}catch(_){}
+ }
+ if(el.hasAttribute('data-readin')){
+  const rw=el.closest('.rw');
+  const digits=el.value.replace(/\D/g,'');
+  const v=setRead(rw,int(digits));
+  if(v!==undefined&&String(v)!==digits)el.value=digits===''?'':v;
+ }
+});
 $('rows').addEventListener('change',e=>{
-const el=e.target.closest('[data-field]');if(!el)return;
-const item=data.find(x=>x.id===el.closest('tr').dataset.id);if(!item)return;
-item[el.dataset.field]=el.dataset.field==='title'?el.value:int(el.value);save();render();
+ const el=e.target.closest('[data-field]');
+ if(el){
+  const item=data.find(x=>x.id===el.closest('.rw').dataset.id);if(!item)return;
+  item[el.dataset.field]=el.dataset.field==='title'?el.value:int(el.value);
+  if(item.read>item.chapters)item.read=item.chapters;
+  save();render();return;
+ }
+ if(e.target.hasAttribute('data-readin')){const rw=e.target.closest('.rw');const item=data.find(x=>x.id===rw.dataset.id);if(item)e.target.value=item.read;}
 });
 $('rows').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input')){e.preventDefault();e.target.blur();}});
 $('rows').addEventListener('click',e=>{
-const b=e.target.closest('[data-delete]');if(!b)return;
-data=data.filter(x=>x.id!==b.closest('tr').dataset.id);save();render();
+ const d=e.target.closest('[data-delete]');
+ if(d){data=data.filter(x=>x.id!==d.closest('.rw').dataset.id);open=false;save();render();return;}
+ const s=e.target.closest('[data-step]');
+ if(s){
+  const rw=s.closest('.rw');const item=data.find(x=>x.id===rw.dataset.id);if(!item)return;
+  const v=setRead(rw,item.read+Number(s.dataset.step));
+  rw.querySelector('[data-readin]').value=v;
+ }
 });
+
+// 포인터 처리: 핸들=순서 드래그 / 맨 위 행=옆으로 밀어서 메뉴 열기
+let drag=null,sw=null;
+const PW=()=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pw'))||190;
+$('rows').addEventListener('pointerdown',e=>{
+ const h=e.target.closest('[data-handle]');
+ if(h){
+  e.preventDefault();
+  const rw=h.closest('.rw');
+  drag={rw,pid:e.pointerId};
+  rw.classList.add('dragging');
+  try{h.setPointerCapture(e.pointerId);}catch(_){}
+  return;
+ }
+ const rw=e.target.closest('.rw');
+ if(!rw||rw!==$('rows').firstElementChild)return;
+ if(e.target.closest('.panel')||e.target.closest('[data-delete]'))return;
+ // 마우스는 입력칸 위 드래그와 겹치지 않게
+ if(e.pointerType==='mouse'&&e.target.matches('input'))return;
+ sw={rw,row:rw.querySelector('.row'),x0:e.clientX,y0:e.clientY,started:false,base:open?-PW():0,pid:e.pointerId,tx:open?-PW():0};
+});
+$('rows').addEventListener('pointermove',e=>{
+ if(drag){
+  const tb=$('rows'),y=e.clientY;
+  const others=[...tb.children].filter(r=>r!==drag.rw);
+  const next=others.find(r=>{const b=r.getBoundingClientRect();return y<b.top+b.height/2;});
+  const cur=drag.rw.nextElementSibling;
+  if(next!==cur&&!(next===undefined&&cur===null))tb.insertBefore(drag.rw,next||null);
+  return;
+ }
+ if(!sw)return;
+ const dx=e.clientX-sw.x0,dy=e.clientY-sw.y0;
+ if(!sw.started){
+  if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){sw=null;return;}
+  if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)*1.2){
+   sw.started=true;sw.row.classList.add('swiping');
+   try{$('rows').setPointerCapture(sw.pid);}catch(_){}
+   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+  }else return;
+ }
+ sw.tx=Math.max(-PW(),Math.min(0,sw.base+dx));
+ sw.row.style.transform=`translateX(${sw.tx}px)`;
+});
+function endPointer(){
+ if(drag){
+  const ids=[...$('rows').children].map(r=>r.dataset.id);
+  const was=data[0]&&data[0].id;
+  data=ids.map(i=>data.find(x=>x.id===i)).filter(Boolean);
+  if(data[0]&&data[0].id!==was)open=false;
+  drag=null;save();render();return;
+ }
+ if(sw){
+  const s=sw;sw=null;
+  if(s.started){
+   open=s.tx<-PW()/2;
+   s.row.classList.remove('swiping');s.row.style.transform='';
+   s.rw.classList.toggle('open',open);
+  }else if(open){
+   // 열린 상태에서 행을 탭하면 닫기
+   open=false;s.rw.classList.remove('open');
+  }
+ }
+}
+$('rows').addEventListener('pointerup',endPointer);
+$('rows').addEventListener('pointercancel',endPointer);
+
 $('addBtn').addEventListener('click',()=>{
-data.push({id:id(),title:'',words:0,chapters:0});save();render();
-const fields=$('rows').querySelectorAll('tr:last-child input');if(fields.length)fields[0].focus();
-window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+ data.push({id:id(),title:'',words:0,chapters:0,read:0});save();render();
+ const fields=$('rows').querySelectorAll('.rw:last-child input[data-field=title]');if(fields.length)fields[0].focus();
+ window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 });
 render();
 })();
