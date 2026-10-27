@@ -56,7 +56,9 @@ button:active{background:#f3f3f3}
 .panel .mid .pct{font-weight:700;font-variant-numeric:tabular-nums}
 
 /* 작품 추가 폼 (입력칸은 16px 이상이어야 사파리가 확대하지 않음) */
-.addbox{display:flex;flex-direction:column;gap:8px;padding:18px 0 0}
+#openAdd{width:100%;margin-top:15px;padding:11px;font-size:14px}
+.addbox{display:none;flex-direction:column;gap:8px;padding:18px 0 0}
+.addbox.show{display:flex}
 .addbox input{font:inherit;font-size:16px;width:100%;min-width:0;border:1px solid #ddd;border-radius:8px;padding:10px 11px;background:#fff;color:var(--text);outline:none;-webkit-appearance:none;appearance:none}
 .addbox input:focus{border-color:#999}
 .addbox .r2{display:flex;gap:8px}
@@ -84,22 +86,23 @@ button:active{background:#f3f3f3}
 <main>
 <header><h1>TBR의 TBR</h1></header>
 <section class="summary" aria-label="합계">
-  <div class="metric"><span class="label">작품</span><span class="value" id="worksTotal">0</span></div>
+  <div class="metric"><span class="label">Works</span><span class="value" id="worksTotal">0</span></div>
   <div class="metric"><span class="label">Words</span><span class="value" id="wordsTotal">0</span></div>
   <div class="metric"><span class="label">Chapters</span><span class="value" id="chaptersTotal">0</span></div>
-  <div class="metric"><span class="label">시간</span><span class="value" id="hoursTotal">0</span></div>
+  <div class="metric"><span class="label">Time</span><span class="value" id="hoursTotal">0</span></div>
 </section>
-<div class="grid head"><span></span><span>작품명</span><span class="num">Words</span><span class="num">Chapters</span><span class="num">시간</span><span></span></div>
+<div class="grid head"><span></span><span>Title</span><span class="num">Words</span><span class="num">Chapters</span><span class="num">Time</span><span></span></div>
 <div id="rows"></div>
-<div class="grid foot"><span></span><span class="lbl">합계</span><span class="num" id="totalWords">0</span><span class="num" id="totalChapters">0</span><span class="time" id="totalTime">0m</span><span></span></div>
+<div class="grid foot"><span></span><span class="lbl">Total</span><span class="num" id="totalWords">0</span><span class="num" id="totalChapters">0</span><span class="time" id="totalTime">0m</span><span></span></div>
 
-<div class="addbox">
-  <input id="fTitle" type="text" placeholder="작품명" enterkeyhint="next" autocomplete="off">
+<button id="openAdd" type="button">＋ 작품 추가</button>
+<div class="addbox" id="addBox">
+  <input id="fTitle" type="text" placeholder="Title" enterkeyhint="next" autocomplete="off">
   <div class="r2">
     <input id="fWords" type="text" inputmode="numeric" placeholder="Words" enterkeyhint="next" autocomplete="off">
     <input id="fChapters" type="text" inputmode="numeric" placeholder="Chapters" enterkeyhint="done" autocomplete="off">
   </div>
-  <div class="r3"><span class="hint" id="fTime">예상 시간 –</span><button id="addBtn" type="button">＋ 작품 추가</button></div>
+  <div class="r3"><span class="hint" id="fTime">예상 시간 –</span><button id="cancelBtn" type="button">취소</button><button id="addBtn" type="button">추가</button></div>
 </div>
 </main>
 <script>
@@ -129,29 +132,31 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
 const pctOf=x=>x.chapters>0?Math.min(100,Math.round(x.read/x.chapters*100)):0;
 const fillBg=p=>p>0?`linear-gradient(to right,${READ_COLOR} ${p}%,#fff ${p}%)`:'#fff';
-let open=false;
+let openId=null;
+const remW=x=>x.chapters>0?x.words*(x.chapters-x.read)/x.chapters:x.words;
+const totalRem=()=>data.reduce((s,x)=>s+remW(x),0);
 
 function render(){
 $('rows').innerHTML=data.map((x,i)=>{
  const p=pctOf(x);
- const panel=i===0?`<div class="panel">
+ const panel=`<div class="panel">
   <button class="rbtn minus" data-step="-1" aria-label="챕터 -1">−</button>
   <div class="mid"><span>읽는 챕터</span>
    <span class="in"><input type="text" inputmode="numeric" data-readin value="${x.read}" aria-label="읽는 챕터"> / ${x.chapters}</span>
    <span class="pct">${p}%</span></div>
-  <button class="rbtn plus" data-step="1" aria-label="챕터 +1">＋</button></div>`:'';
- return `<div class="rw${i===0&&open?' open':''}" data-id="${esc(x.id)}">${panel}
-<div class="grid row"${i===0?` style="background:${fillBg(p)}"`:''}>
+  <button class="rbtn plus" data-step="1" aria-label="챕터 +1">＋</button></div>`;
+ return `<div class="rw${x.id===openId?' open':''}" data-id="${esc(x.id)}">${panel}
+<div class="grid row" style="background:${fillBg(p)}">
 <span><span class="handle" data-handle title="드래그해서 순서 변경">⋮⋮</span></span>
 <span class="title">${esc(x.title)}</span>
 <span class="num">${fmt(x.words)}</span>
 <span class="num">${x.chapters}</span>
-<span class="time">${time(x.words)}</span>
+<span class="time">${time(remW(x))}</span>
 <span><button class="del" data-delete aria-label="삭제">×</button></span></div></div>`;
 }).join('');
 const w=data.reduce((s,x)=>s+x.words,0),c=data.reduce((s,x)=>s+x.chapters,0);
 $('worksTotal').textContent=fmt(data.length);$('wordsTotal').textContent=fmt(w);$('chaptersTotal').textContent=fmt(c);$('hoursTotal').textContent=time(w);
-$('totalWords').textContent=fmt(w);$('totalChapters').textContent=fmt(c);$('totalTime').textContent=time(w);
+$('totalWords').textContent=fmt(w);$('totalChapters').textContent=fmt(c);$('totalTime').textContent=time(totalRem());
 }
 
 /* ---------- 작품 추가 폼 ---------- */
@@ -180,11 +185,20 @@ function addWork(){
  if(!title){$('fTitle').focus();return;}
  data.push({id:uid(),title,words:int($('fWords').value),chapters:int($('fChapters').value),read:0});
  save();render();
- $('fTitle').value='';$('fWords').value='';$('fChapters').value='';updateHint();
+ closeAdd();
  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
  const last=$('rows').lastElementChild;
  if(last)last.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
+function closeAdd(){
+ $('addBox').classList.remove('show');$('openAdd').style.display='';
+ $('fTitle').value='';$('fWords').value='';$('fChapters').value='';updateHint();
+}
+$('openAdd').addEventListener('click',()=>{
+ $('addBox').classList.add('show');$('openAdd').style.display='none';
+ $('fTitle').focus();
+});
+$('cancelBtn').addEventListener('click',closeAdd);
 $('addBtn').addEventListener('click',addWork);
 
 /* ---------- 목록 이벤트 ---------- */
@@ -195,6 +209,8 @@ function setRead(rw,v){
  const p=pctOf(item);
  rw.querySelector('.row').style.background=fillBg(p);
  rw.querySelector('.pct').textContent=p+'%';
+ rw.querySelector('.row .time').textContent=time(remW(item));
+ $('totalTime').textContent=time(totalRem());
  return v;
 }
 $('rows').addEventListener('input',e=>{
@@ -216,7 +232,7 @@ $('rows').addEventListener('click',e=>{
  if(d){
   const rw=d.closest('.rw');const item=data.find(x=>x.id===rw.dataset.id);
   if(!confirm(`"${item?item.title:''}" 삭제할까요?`))return;
-  data=data.filter(x=>x.id!==rw.dataset.id);open=false;save();render();return;
+  data=data.filter(x=>x.id!==rw.dataset.id);openId=null;save();render();return;
  }
  const s=e.target.closest('[data-step]');
  if(s){
@@ -240,9 +256,9 @@ $('rows').addEventListener('pointerdown',e=>{
   return;
  }
  const rw=e.target.closest('.rw');
- if(!rw||rw!==$('rows').firstElementChild)return;
+ if(!rw)return;
  if(e.target.closest('.panel')||e.target.closest('[data-delete]'))return;
- sw={rw,row:rw.querySelector('.row'),x0:e.clientX,y0:e.clientY,started:false,base:open?-PW():0,pid:e.pointerId,tx:open?-PW():0};
+ sw={rw,row:rw.querySelector('.row'),x0:e.clientX,y0:e.clientY,started:false,base:rw.dataset.id===openId?-PW():0,pid:e.pointerId,tx:rw.dataset.id===openId?-PW():0};
 });
 $('rows').addEventListener('pointermove',e=>{
  if(drag){
@@ -259,6 +275,7 @@ $('rows').addEventListener('pointermove',e=>{
   if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){sw=null;return;}
   if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)*1.2){
    sw.started=true;sw.row.classList.add('swiping');
+   $('rows').querySelectorAll('.rw.open').forEach(r=>{if(r!==sw.rw)r.classList.remove('open');});
    try{$('rows').setPointerCapture(sw.pid);}catch(_){}
   }else return;
  }
@@ -268,19 +285,18 @@ $('rows').addEventListener('pointermove',e=>{
 function endPointer(){
  if(drag){
   const ids=[...$('rows').children].map(r=>r.dataset.id);
-  const was=data[0]&&data[0].id;
   data=ids.map(i=>data.find(x=>x.id===i)).filter(Boolean);
-  if(data[0]&&data[0].id!==was)open=false;
   drag=null;save();render();return;
  }
  if(sw){
   const s=sw;sw=null;
   if(s.started){
-   open=s.tx<-PW()/2;
+   const o=s.tx<-PW()/2;
+   openId=o?s.rw.dataset.id:null;
    s.row.classList.remove('swiping');s.row.style.transform='';
-   s.rw.classList.toggle('open',open);
-  }else if(open){
-   open=false;s.rw.classList.remove('open');
+   s.rw.classList.toggle('open',o);
+  }else if(openId){
+   openId=null;$('rows').querySelectorAll('.rw.open').forEach(r=>r.classList.remove('open'));
   }
  }
 }
