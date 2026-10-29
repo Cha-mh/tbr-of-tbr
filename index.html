@@ -31,7 +31,9 @@ h1{font-size:22px;letter-spacing:-.7px;margin:0;font-weight:750}
 .row{background:#fff;padding:11px 0;position:relative;z-index:1;transition:transform .22s ease;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .rw.open .row{transform:translateX(calc(-1*var(--pw)))}
 .row.swiping{transition:none}
-.row .title{font-weight:500;line-height:1.35;word-break:break-word}
+.row .title{font-weight:500;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .title a{color:inherit;text-decoration:none;-webkit-touch-callout:none}
+.row .title a:active{opacity:.6}
 .row .num{text-align:right;font-variant-numeric:tabular-nums}
 .row .time{font-size:12px;color:#666;white-space:nowrap;text-align:right}
 .foot{background:#fafafa;font-weight:750;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -99,6 +101,7 @@ button:active{background:#f3f3f3}
 <button id="openAdd" type="button">＋ 작품 추가</button>
 <div class="addbox" id="addBox">
   <input id="fTitle" type="text" placeholder="Title" enterkeyhint="next" autocomplete="off">
+  <input id="fLink" type="url" inputmode="url" placeholder="Link (optional)" enterkeyhint="next" autocomplete="off" autocapitalize="off" autocorrect="off">
   <div class="r2">
     <input id="fWords" type="text" inputmode="numeric" placeholder="Words" enterkeyhint="next" autocomplete="off">
     <input id="fChapters" type="text" inputmode="numeric" placeholder="Chapters" enterkeyhint="done" autocomplete="off">
@@ -125,7 +128,7 @@ const int=v=>{const n=Number(String(v).replace(/[^\d]/g,''));return Number.isFin
 let data;
 try{const s=localStorage.getItem(KEY);data=s===null?initial.map(x=>({...x,id:uid()})):JSON.parse(s);if(!Array.isArray(data))throw Error();}
 catch(e){data=initial.map(x=>({...x,id:uid()}));}
-data=data.map(x=>({id:x.id||uid(),title:String(x.title??''),words:int(x.words),chapters:int(x.chapters),read:int(x.read)}));
+data=data.map(x=>({id:x.id||uid(),link:String(x.link??''),title:String(x.title??''),words:int(x.words),chapters:int(x.chapters),read:int(x.read)}));
 data.forEach(x=>{if(x.read>x.chapters)x.read=x.chapters;});
 const fmt=n=>Math.round(n).toLocaleString('en-US');
 const time=w=>{const m=Math.round(w/RATE*60),h=Math.floor(m/60),r=m%60;return h?(r?`${h}h ${r}m`:`${h}h`):`${r}m`;};
@@ -149,7 +152,7 @@ $('rows').innerHTML=data.map((x,i)=>{
  return `<div class="rw${x.id===openId?' open':''}" data-id="${esc(x.id)}">${panel}
 <div class="grid row" style="background:${fillBg(p)}">
 <span><span class="handle" data-handle title="드래그해서 순서 변경">⋮⋮</span></span>
-<span class="title">${esc(x.title)}</span>
+<span class="title">${x.link?`<a href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${esc(x.title)}</a>`:esc(x.title)}</span>
 <span class="num">${fmt(x.words)}</span>
 <span class="num">${x.chapters}</span>
 <span class="time">${time(remW(x))}</span>
@@ -178,13 +181,19 @@ function updateHint(){
 }
 $('fWords').addEventListener('input',()=>{commaInput($('fWords'),true);updateHint();});
 $('fChapters').addEventListener('input',()=>commaInput($('fChapters'),false));
-$('fTitle').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('fWords').focus();}});
+$('fTitle').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('fLink').focus();}});
+$('fLink').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('fWords').focus();}});
 $('fWords').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('fChapters').focus();}});
 $('fChapters').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addWork();}});
+function normLink(v){
+ v=v.trim();if(!v)return '';
+ if(!/^[a-z][a-z0-9+.-]*:/i.test(v))v='https://'+v;
+ try{const u=new URL(v);return /^https?:$/.test(u.protocol)?u.href:'';}catch(e){return '';}
+}
 function addWork(){
  const title=$('fTitle').value.trim();
  if(!title){$('fTitle').focus();return;}
- data.push({id:uid(),title,words:int($('fWords').value),chapters:int($('fChapters').value),read:0});
+ data.push({id:uid(),title,link:normLink($('fLink').value),words:int($('fWords').value),chapters:int($('fChapters').value),read:0});
  save();render();
  closeAdd();
  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
@@ -193,7 +202,7 @@ function addWork(){
 }
 function closeAdd(){
  $('addBox').classList.remove('show');$('openAdd').style.display='';
- $('fTitle').value='';$('fWords').value='';$('fChapters').value='';updateHint();
+ $('fTitle').value='';$('fLink').value='';$('fWords').value='';$('fChapters').value='';updateHint();
 }
 $('openAdd').addEventListener('click',()=>{
  $('addBox').classList.add('show');$('openAdd').style.display='none';
